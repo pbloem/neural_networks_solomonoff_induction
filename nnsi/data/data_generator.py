@@ -120,6 +120,7 @@ class DataGenerator(abc.ABC):
         sequence.
     """
     params = self.sample_params(sample_size=self._batch_size)
+
     sequences, categorical_probs, extra = self.sample_from_params(params=params)
     log_dict = {
         "categorical_probs": categorical_probs,

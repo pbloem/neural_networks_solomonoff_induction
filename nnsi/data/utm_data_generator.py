@@ -45,6 +45,7 @@ class UTMDataGenerator(dg_lib.DataGenerator):
       maximum_steps: int,
       tokenizer: Tokenizer,
       maximum_program_length: int = 100,
+      rep_pad = False
   ):
     """Initializes the UTM data generator.
 
@@ -63,6 +64,7 @@ class UTMDataGenerator(dg_lib.DataGenerator):
       tokenizer: The tokenizer that maps the outputs of the UTM (characters) to
         integers.
       maximum_program_length: Maximum length of the sampled programs.
+      rep_pad: Whether to pad by repeating the string (added).
     """
     super().__init__(batch_size, seq_length, rng)
     self._utm = utm
@@ -70,6 +72,7 @@ class UTMDataGenerator(dg_lib.DataGenerator):
     self._maximum_steps = maximum_steps
     self._tokenizer = tokenizer
     self._maximum_program_length = maximum_program_length
+    self._rep_pad = rep_pad
 
     self._token_position: dict[str, int] | None = None
     if tokenizer == Tokenizer.SEQ_POSITION:
@@ -148,7 +151,15 @@ class UTMDataGenerator(dg_lib.DataGenerator):
       mask = np.zeros(self._seq_length, dtype=np.uint8)
       if result['output_length'] != self._seq_length:
         padding_length = self._seq_length - result['output_length']
-        output += '\x00' * padding_length
+
+        if not self._rep_pad:
+          output += '\x00' * padding_length
+        else:
+          output = output if len(output) > 0 else '\x00'
+          mult = (self._seq_length // len(output)) + 1
+          outrep = output * mult
+          output = outrep[:self._seq_length]
+
         mask[-padding_length:] = 1
       assert len(output) == self._seq_length
       match self._tokenizer:
